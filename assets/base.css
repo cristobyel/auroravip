@@ -198,3 +198,47 @@ textarea.field__input {
 .rte a { color: var(--color-accent); }
 .rte img { max-width: 100%; height: auto; border-radius: var(--media-radius); }
 .rte ul, .rte ol { padding-left: 1.5em; }
+
+/* ------------------------------------------------------------
+   Aurora VIP — componentes compartilhados da home
+   ------------------------------------------------------------ */
+
+/* Cabecalho de secao centralizado (titulo serifado + subtitulo) */
+.section-heading { text-align: center; max-width: 640px; margin: 0 auto 36px; }
+.section-heading__title { font-size: clamp(1.7rem, 3.2vw, 2.5rem); line-height: 1.15; letter-spacing: -0.01em; margin: 0; }
+.section-heading__text { margin: 10px 0 0; font-size: var(--f2); line-height: 1.5; opacity: 0.65; }
+
+/* Botao dourado (CTA principal) */
+.button--gold {
+  color: var(--color-ink);
+  background: var(--gradient-gold);
+  border-color: transparent;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  transition: filter 0.2s ease, transform 0.2s ease;
+}
+.button--gold:hover { opacity: 1; filter: brightness(1.08); transform: translateY(-1px); }
+
+/* Botao secundario escuro (superficie com borda dourada) */
+.button--soft {
+  color: var(--color-cream-text);
+  background-color: var(--color-ink-soft);
+  border-color: rgba(209, 164, 77, 0.4);
+  transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease;
+}
+.button--soft:hover { opacity: 1; color: var(--color-gold-light); background-color: #241f15; border-color: var(--color-gold); }
+
+/* Botao preto com texto dourado */
+.button--ink {
+  color: var(--color-gold-light);
+  background-color: var(--color-ink);
+  border-color: var(--color-gold-dark);
+  transition: background-color 0.2s ease, color 0.2s ease;
+}
+.button--ink:hover { opacity: 1; color: var(--color-ink); background: var(--gradient-gold); border-color: transparent; }
+
+.button--small { min-height: 40px; padding: 8px 18px; font-size: var(--f1); }
+
+/* Respiro no fim da home (as secoes da home so tem padding-top) */
+.template-index .content-for-layout { padding-bottom: var(--spacing-sections); }
+

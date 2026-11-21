@@ -1,65 +1,108 @@
 {%- comment -%}
   ============================================================
-  FOOTER — rodapé do site
+  FOOTER — rodapé do site (Aurora VIP)
   ============================================================
 
   O QUE FAZ:
-  Renderiza o rodapé da loja em duas faixas: a superior com blocks
-  configuráveis (marca, menu, texto e newsletter) e a inferior com
-  seletor de localização, ícones de pagamento, redes sociais e o
-  copyright/crédito.
+  Rodapé preto com detalhes dourados em três camadas:
+  1) faixa de diferenciais (blocks "benefit": ícone + título + texto);
+  2) colunas principais (marca com logo e redes sociais, menus, textos e
+     newsletter);
+  3) base com copyright, formas de pagamento, seletor de país/idioma e
+     botão "voltar ao topo".
 
   ONDE É USADA:
-  No layout (layout/theme.liquid), como footer presente em todas
-  as páginas. É uma section de grupo/footer do tema.
+  sections/footer-group.json, em todas as páginas (layout/theme.liquid).
 
   PRINCIPAIS PARTES:
-  - footer__top: loop de section.blocks (case block.type) montando
-    cada bloco — 'brand' (logo ou nome + texto), 'menu' (heading +
-    link_list), 'text' (heading + richtext) e 'newsletter' (heading
-    + snippet 'newsletter-form').
-  - footer__bottom: seletor de localização (snippet
-    'localization-form'), ícones de pagamento gerados de
-    shop.enabled_payment_types, redes sociais (Instagram/Facebook/
-    LinkedIn a partir dos settings globais social_*_link) e o
-    copyright com o crédito da base (link lecdt.com).
+  - Loop 1 de section.blocks: só os blocks "benefit" (faixa superior).
+  - Loop 2: os demais blocks, via case — 'brand' (logo + texto + redes),
+    'menu' (título + link_list), 'text' (título + richtext) e 'newsletter'
+    (título + texto + snippet 'newsletter-form').
+  - Logo: image_picker do bloco brand; se vazio, assets/aurora-logo.png.
+  - Redes sociais: settings globais social_*_link (Instagram, WhatsApp,
+    TikTok, Facebook, LinkedIn) — só aparecem as preenchidas.
+  - Pagamento: shop.enabled_payment_types (payment_type_svg_tag).
 
   OBSERVAÇÕES:
-  - Ícones de pagamento saem automaticamente das formas de
-    pagamento habilitadas na loja (payment_type_svg_tag).
-  - Toggles no schema: show_social, show_payment_icons e
-    enable_localization.
-  - Links de redes sociais vêm dos settings globais do tema
-    (settings.social_*_link), não do schema desta section.
-  - Ícones de redes vêm do snippet 'icon'.
+  - Os ícones dos diferenciais vêm do snippet 'icon' (gem, shield, chat,
+    truck).
+  - O crédito da base (Team Lecdt) pode ser ocultado pelo setting
+    show_credit.
 {%- endcomment -%}
 <footer class="footer" data-section-id="{{ section.id }}">
+  {%- assign benefit_count = 0 -%}
+  {%- for block in section.blocks -%}
+    {%- if block.type == 'benefit' -%}{%- assign benefit_count = benefit_count | plus: 1 -%}{%- endif -%}
+  {%- endfor -%}
+
+  {%- if benefit_count > 0 -%}
+    <div class="footer__benefits">
+      <ul class="footer__benefits-list page-width" role="list" style="--benefit-cols: {{ benefit_count }};">
+        {%- for block in section.blocks -%}
+          {%- if block.type == 'benefit' -%}
+            <li class="footer__benefit" {{ block.shopify_attributes }}>
+              <span class="footer__benefit-icon">{% render 'icon', name: block.settings.icon %}</span>
+              <div>
+                {%- if block.settings.title != blank -%}<p class="footer__benefit-title">{{ block.settings.title | escape }}</p>{%- endif -%}
+                {%- if block.settings.text != blank -%}<p class="footer__benefit-text">{{ block.settings.text | escape }}</p>{%- endif -%}
+              </div>
+            </li>
+          {%- endif -%}
+        {%- endfor -%}
+      </ul>
+    </div>
+  {%- endif -%}
+
   <div class="footer__top page-width">
     {%- for block in section.blocks -%}
       {%- case block.type -%}
         {%- when 'brand' -%}
           <div class="footer__block footer__block--brand" {{ block.shopify_attributes }}>
-            {%- if block.settings.logo != blank -%}
-              {{
-                block.settings.logo
-                | image_url: width: 400
-                | image_tag:
-                  class: 'footer__logo',
-                  widths: '150, 300, 400',
-                  width: 150,
-                  height: 150 | divided_by: block.settings.logo.aspect_ratio,
-                  alt: shop.name | escape
-              }}
-            {%- else -%}
-              <p class="footer__brand-name">{{ shop.name }}</p>
-            {%- endif -%}
+            <a href="{{ routes.root_url }}" class="footer__logo-link" aria-label="{{ shop.name | escape }}">
+              {%- if block.settings.logo != blank -%}
+                {{
+                  block.settings.logo
+                  | image_url: width: 600
+                  | image_tag:
+                    class: 'footer__logo',
+                    widths: '200, 400, 600',
+                    width: 220,
+                    height: 220 | divided_by: block.settings.logo.aspect_ratio,
+                    alt: shop.name,
+                    loading: 'lazy'
+                }}
+              {%- else -%}
+                <img class="footer__logo" src="{{ 'aurora-logo.png' | asset_url }}" width="220" height="92" alt="{{ shop.name | escape }}" loading="lazy">
+              {%- endif -%}
+            </a>
             {%- if block.settings.text != blank -%}
               <div class="footer__text rte">{{ block.settings.text }}</div>
+            {%- endif -%}
+
+            {%- if section.settings.show_social -%}
+              <ul class="footer__social" role="list" aria-label="{{ 'sections.footer.social' | t }}">
+                {%- if settings.social_instagram_link != blank -%}
+                  <li><a href="{{ settings.social_instagram_link }}" aria-label="Instagram" rel="noopener" target="_blank">{% render 'icon', name: 'instagram' %}</a></li>
+                {%- endif -%}
+                {%- if settings.social_whatsapp_link != blank -%}
+                  <li><a href="{{ settings.social_whatsapp_link }}" aria-label="WhatsApp" rel="noopener" target="_blank">{% render 'icon', name: 'whatsapp' %}</a></li>
+                {%- endif -%}
+                {%- if settings.social_tiktok_link != blank -%}
+                  <li><a href="{{ settings.social_tiktok_link }}" aria-label="TikTok" rel="noopener" target="_blank">{% render 'icon', name: 'tiktok' %}</a></li>
+                {%- endif -%}
+                {%- if settings.social_facebook_link != blank -%}
+                  <li><a href="{{ settings.social_facebook_link }}" aria-label="Facebook" rel="noopener" target="_blank">{% render 'icon', name: 'facebook' %}</a></li>
+                {%- endif -%}
+                {%- if settings.social_linkedin_link != blank -%}
+                  <li><a href="{{ settings.social_linkedin_link }}" aria-label="LinkedIn" rel="noopener" target="_blank">{% render 'icon', name: 'linkedin' %}</a></li>
+                {%- endif -%}
+              </ul>
             {%- endif -%}
           </div>
 
         {%- when 'menu' -%}
-          <div class="footer__block footer__block--menu" {{ block.shopify_attributes }}>
+          <nav class="footer__block footer__block--menu" {{ block.shopify_attributes }} {% if block.settings.heading != blank %}aria-label="{{ block.settings.heading | escape }}"{% endif %}>
             {%- if block.settings.heading != blank -%}
               <h2 class="footer__heading">{{ block.settings.heading | escape }}</h2>
             {%- endif -%}
@@ -70,7 +113,7 @@
                 {%- endfor -%}
               </ul>
             {%- endif -%}
-          </div>
+          </nav>
 
         {%- when 'text' -%}
           <div class="footer__block footer__block--text" {{ block.shopify_attributes }}>
@@ -87,21 +130,24 @@
             {%- if block.settings.heading != blank -%}
               <h2 class="footer__heading">{{ block.settings.heading | escape }}</h2>
             {%- endif -%}
+            {%- if block.settings.text != blank -%}
+              <p class="footer__text footer__newsletter-text">{{ block.settings.text | escape }}</p>
+            {%- endif -%}
             {% render 'newsletter-form', block: block %}
           </div>
       {%- endcase -%}
     {%- endfor -%}
   </div>
 
-  <div class="footer__bottom page-width">
-    <div class="footer__bottom-left">
-      {%- if section.settings.enable_localization -%}
-        {% render 'localization-form',
-          section_id: section.id,
-          show_country: true,
-          show_language: true
-        %}
-      {%- endif -%}
+  <div class="footer__bottom-wrap">
+    <div class="footer__bottom page-width">
+      <p class="footer__copyright">
+        &copy; {{ 'now' | date: '%Y' }} {{ shop.name }}. {{ 'sections.footer.rights' | t }}
+        {%- if section.settings.show_credit -%}
+          <span class="footer__credit">{{ 'sections.footer.base_by_html' | t: link: 'https://lecdt.com' }}</span>
+        {%- endif -%}
+      </p>
+
       {%- if section.settings.show_payment_icons and shop.enabled_payment_types.size > 0 -%}
         <ul class="footer__payment" role="list" aria-label="{{ 'sections.footer.payment' | t }}">
           {%- for type in shop.enabled_payment_types -%}
@@ -109,95 +155,230 @@
           {%- endfor -%}
         </ul>
       {%- endif -%}
-    </div>
 
-    <div class="footer__bottom-right">
-      {%- if section.settings.show_social -%}
-        <ul class="footer__social" role="list">
-          {%- if settings.social_instagram_link != blank -%}
-            <li><a href="{{ settings.social_instagram_link }}" aria-label="Instagram" rel="noopener" target="_blank">{% render 'icon', name: 'instagram' %}</a></li>
-          {%- endif -%}
-          {%- if settings.social_facebook_link != blank -%}
-            <li><a href="{{ settings.social_facebook_link }}" aria-label="Facebook" rel="noopener" target="_blank">{% render 'icon', name: 'facebook' %}</a></li>
-          {%- endif -%}
-          {%- if settings.social_linkedin_link != blank -%}
-            <li><a href="{{ settings.social_linkedin_link }}" aria-label="LinkedIn" rel="noopener" target="_blank">{% render 'icon', name: 'linkedin' %}</a></li>
-          {%- endif -%}
-        </ul>
-      {%- endif -%}
-      <p class="footer__copyright">
-        &copy; {{ 'now' | date: '%Y' }} {{ shop.name }}. {{ 'sections.footer.rights' | t }}
-        <span class="footer__credit">
-          {{ 'sections.footer.base_by_html' | t: link: 'https://lecdt.com' }}
-        </span>
-      </p>
+      <div class="footer__bottom-end">
+        {%- if section.settings.enable_localization -%}
+          {% render 'localization-form', section_id: section.id, show_country: true, show_language: true %}
+        {%- endif -%}
+        <button type="button" class="footer__top-button" data-back-to-top aria-label="{{ 'sections.footer.back_to_top' | t }}">
+          {% render 'icon', name: 'arrow-up' %}
+        </button>
+      </div>
     </div>
   </div>
 </footer>
 
 <style>
   .footer {
-    background-color: var(--color-background-contrast);
-    color: var(--color-text-contrast);
-    margin-top: var(--spacing-sections);
+    position: relative;
+    color: var(--color-cream-text);
+    background-color: var(--color-ink);
   }
-  .footer__top {
+  /* Fio dourado no topo */
+  .footer::before {
+    content: '';
+    display: block;
+    height: 3px;
+    background: var(--gradient-gold);
+  }
+
+  /* ---- Faixa de diferenciais ---- */
+  .footer__benefits { background-color: var(--color-ink-soft); border-bottom: 1px solid rgba(209, 164, 77, 0.2); }
+  .footer__benefits-list {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-    gap: 40px;
-    padding-top: 48px;
-    padding-bottom: 48px;
+    grid-template-columns: repeat(var(--benefit-cols), minmax(0, 1fr));
+    gap: 24px;
+    margin: 0;
+    padding-block: 28px;
+    list-style: none;
   }
-  .footer__logo { display: block; height: auto; margin-bottom: 16px; }
-  .footer__brand-name { font-family: var(--font-heading-family); font-size: var(--f4); margin-bottom: 12px; }
-  .footer__heading { font-size: var(--f2); margin-bottom: 16px; }
-  .footer__menu { list-style: none; margin: 0; padding: 0; }
-  .footer__link { display: inline-block; padding: 6px 0; color: inherit; text-decoration: none; font-size: var(--f1); }
-  .footer__link:hover { text-decoration: underline; }
-  .footer__text { font-size: var(--f1); line-height: 1.6; }
+  .footer__benefit { display: flex; align-items: center; gap: 16px; }
+  .footer__benefit-icon {
+    display: inline-flex;
+    flex: 0 0 52px;
+    align-items: center;
+    justify-content: center;
+    width: 52px;
+    height: 52px;
+    color: var(--color-gold-light);
+    border: 1px solid rgba(209, 164, 77, 0.45);
+    border-radius: 50%;
+  }
+  .footer__benefit-title { margin: 0; font-family: var(--font-heading-family); font-size: var(--f3); color: var(--color-gold-light); }
+  .footer__benefit-text { margin: 2px 0 0; font-size: var(--f1); line-height: 1.45; color: rgba(244, 236, 216, 0.65); }
+
+  /* ---- Colunas principais ---- */
+  .footer__top { display: flex; flex-wrap: wrap; gap: 48px 56px; padding-block: 56px 48px; }
+  .footer__block { flex: 1 1 170px; min-width: 0; }
+  .footer__block--brand { flex: 1.7 1 280px; max-width: 420px; }
+  .footer__block--newsletter { flex: 1.5 1 280px; }
+  .footer__logo-link { display: inline-block; line-height: 0; margin-bottom: 20px; }
+  .footer__logo { display: block; width: 220px; max-width: 100%; height: auto; filter: drop-shadow(0 2px 14px rgba(209, 164, 77, 0.25)); }
+  .footer__heading {
+    position: relative;
+    margin: 0 0 22px;
+    padding-bottom: 14px;
+    font-size: var(--f4);
+    color: var(--color-gold-light);
+  }
+  .footer__heading::after { content: ''; position: absolute; left: 0; bottom: 0; width: 32px; height: 2px; background: var(--gradient-gold); }
+  .footer__menu { margin: 0; padding: 0; list-style: none; }
+  .footer__link {
+    display: inline-block;
+    padding: 6px 0;
+    font-size: var(--f2);
+    color: rgba(244, 236, 216, 0.72);
+    text-decoration: none;
+    transition: color 0.2s ease, transform 0.2s ease;
+  }
+  .footer__link:hover { color: var(--color-gold-light); transform: translateX(4px); }
+  .footer__text { font-size: var(--f2); line-height: 1.7; color: rgba(244, 236, 216, 0.72); }
+  .footer__text a { color: var(--color-gold-light); }
+  .footer__newsletter-text { margin: 0 0 18px; }
+
+  /* Redes sociais */
+  .footer__social { display: flex; flex-wrap: wrap; gap: 10px; margin: 24px 0 0; padding: 0; list-style: none; }
+  .footer__social a {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 44px;
+    height: 44px;
+    color: var(--color-gold-light);
+    border: 1px solid rgba(209, 164, 77, 0.45);
+    border-radius: 50%;
+    transition: color 0.2s ease, background 0.2s ease, transform 0.2s ease;
+  }
+  .footer__social a:hover { color: var(--color-ink); background: var(--gradient-gold); border-color: transparent; transform: translateY(-2px); }
+
+  /* Newsletter (campo escuro, botão dourado) */
+  .footer .newsletter-form__field { position: relative; flex-wrap: nowrap; gap: 0; }
+  .footer .newsletter-form .field__input {
+    min-height: 50px;
+    padding: 0 150px 0 20px;
+    color: var(--color-cream-text);
+    background-color: #000;
+    border: 1px solid rgba(209, 164, 77, 0.4);
+    border-radius: 999px;
+  }
+  .footer .newsletter-form .field__input::placeholder { color: rgba(244, 236, 216, 0.45); }
+  .footer .newsletter-form .field__input:focus { outline: none; border-color: var(--color-gold-light); }
+  .footer .newsletter-form__button {
+    position: absolute;
+    top: 5px;
+    right: 5px;
+    bottom: 5px;
+    min-height: 0;
+    padding: 0 22px;
+    color: var(--color-ink);
+    background: var(--gradient-gold);
+    border: 0;
+    font-weight: 700;
+  }
+  .footer .newsletter-form__message { color: var(--color-gold-light); }
+
+  /* ---- Base ---- */
+  .footer__bottom-wrap { border-top: 1px solid rgba(209, 164, 77, 0.2); }
   .footer__bottom {
     display: flex;
+    flex-wrap: wrap;
     align-items: center;
     justify-content: space-between;
-    flex-wrap: wrap;
-    gap: 16px;
-    padding-top: 24px;
-    padding-bottom: 24px;
-    border-top: 1px solid var(--color-border);
+    gap: 16px 28px;
+    padding-block: 22px;
   }
-  .footer__bottom-left,
-  .footer__bottom-right { display: flex; align-items: center; gap: 20px; flex-wrap: wrap; }
-  .footer__payment { display: flex; gap: 6px; list-style: none; margin: 0; padding: 0; flex-wrap: wrap; }
-  .footer__payment-icon { width: 38px; height: 24px; }
-  .footer__social { display: flex; gap: 12px; list-style: none; margin: 0; padding: 0; }
-  .footer__social a { color: inherit; display: inline-flex; }
-  .footer__copyright { font-size: var(--f0); }
+  .footer__copyright { margin: 0; font-size: var(--f1); color: rgba(244, 236, 216, 0.6); }
+  .footer__credit { margin-left: 8px; }
   .footer__credit a { color: inherit; text-decoration: underline; }
-  .footer__credit a:hover { color: var(--color-accent); }
+  .footer__credit a:hover { color: var(--color-gold-light); }
+  .footer__payment { display: flex; flex-wrap: wrap; gap: 6px; margin: 0; padding: 0; list-style: none; }
+  .footer__payment-icon { width: 38px; height: 24px; }
+  .footer__bottom-end { display: flex; align-items: center; gap: 16px; }
+  .footer .localization__select {
+    color: var(--color-cream-text);
+    background-color: #0f0d09;
+    border-color: rgba(209, 164, 77, 0.4);
+  }
+  .footer__top-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 44px;
+    height: 44px;
+    padding: 0;
+    color: var(--color-gold-light);
+    background: none;
+    border: 1px solid rgba(209, 164, 77, 0.45);
+    border-radius: 50%;
+    cursor: pointer;
+    transition: color 0.2s ease, background 0.2s ease;
+  }
+  .footer__top-button:hover { color: var(--color-ink); background: var(--gradient-gold); border-color: transparent; }
+  .footer a:focus-visible,
+  .footer button:focus-visible { outline: 2px solid var(--color-gold-light); outline-offset: 2px; }
 
   @media screen and (max-width: 1000px) {
+    .footer__benefits-list { grid-template-columns: 1fr; gap: 18px; padding-block: 24px; }
+    .footer__top { gap: 36px 32px; padding-block: 40px 32px; }
+    .footer__block--brand { flex-basis: 100%; max-width: none; }
+    .footer__block--menu { flex-basis: calc(50% - 16px); }
+    .footer__block--newsletter { flex-basis: 100%; }
     .footer__bottom { flex-direction: column; align-items: flex-start; }
+    .footer__bottom-end { width: 100%; justify-content: space-between; }
   }
 </style>
+
+<script>
+  (function () {
+    var root = document.querySelector('.footer[data-section-id="{{ section.id }}"]');
+    if (!root) return;
+    var button = root.querySelector('[data-back-to-top]');
+    if (!button) return;
+    button.addEventListener('click', function () {
+      var reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      window.scrollTo({ top: 0, behavior: reduce ? 'auto' : 'smooth' });
+    });
+  })();
+</script>
 
 {% schema %}
 {
   "name": "t:sections.footer.name",
   "blocks": [
     {
+      "type": "benefit",
+      "name": "Diferencial",
+      "settings": [
+        {
+          "type": "select",
+          "id": "icon",
+          "label": "Ícone",
+          "options": [
+            { "value": "gem", "label": "Joia" },
+            { "value": "shield", "label": "Escudo (segurança)" },
+            { "value": "chat", "label": "Atendimento" },
+            { "value": "truck", "label": "Entrega" }
+          ],
+          "default": "gem"
+        },
+        { "type": "text", "id": "title", "label": "Título", "default": "Ouro 18k" },
+        { "type": "text", "id": "text", "label": "Texto", "default": "Peças com banho de ouro e acabamento premium." }
+      ]
+    },
+    {
       "type": "brand",
       "name": "t:sections.footer.blocks.brand.name",
       "limit": 1,
       "settings": [
-        { "type": "image_picker", "id": "logo", "label": "t:sections.footer.blocks.brand.settings.logo.label" },
-        { "type": "richtext", "id": "text", "label": "t:sections.footer.blocks.brand.settings.text.label" }
+        { "type": "image_picker", "id": "logo", "label": "t:sections.footer.blocks.brand.settings.logo.label", "info": "Se vazio, usa assets/aurora-logo.png." },
+        { "type": "richtext", "id": "text", "label": "t:sections.footer.blocks.brand.settings.text.label", "default": "<p>Joias exclusivas banhadas a ouro 18k. Sofisticação, brilho e a exclusividade que você merece.</p>" }
       ]
     },
     {
       "type": "menu",
       "name": "t:sections.footer.blocks.menu.name",
       "settings": [
-        { "type": "text", "id": "heading", "default": "Quick links", "label": "t:sections.footer.blocks.menu.settings.heading.label" },
+        { "type": "text", "id": "heading", "default": "Links rápidos", "label": "t:sections.footer.blocks.menu.settings.heading.label" },
         { "type": "link_list", "id": "menu", "default": "footer", "label": "t:sections.footer.blocks.menu.settings.menu.label" }
       ]
     },
@@ -214,19 +395,22 @@
       "name": "t:sections.footer.blocks.newsletter.name",
       "limit": 1,
       "settings": [
-        { "type": "text", "id": "heading", "default": "Subscribe to our newsletter", "label": "t:sections.footer.blocks.newsletter.settings.heading.label" }
+        { "type": "text", "id": "heading", "default": "Receba novidades", "label": "t:sections.footer.blocks.newsletter.settings.heading.label" },
+        { "type": "textarea", "id": "text", "label": "Texto", "default": "Cadastre-se para receber lançamentos e ofertas exclusivas." }
       ]
     }
   ],
   "settings": [
     { "type": "checkbox", "id": "show_social", "default": true, "label": "t:sections.footer.settings.show_social.label" },
     { "type": "checkbox", "id": "show_payment_icons", "default": true, "label": "t:sections.footer.settings.show_payment_icons.label" },
-    { "type": "checkbox", "id": "enable_localization", "default": true, "label": "t:sections.footer.settings.enable_localization.label" }
+    { "type": "checkbox", "id": "enable_localization", "default": false, "label": "t:sections.footer.settings.enable_localization.label" },
+    { "type": "checkbox", "id": "show_credit", "default": true, "label": "Mostrar crédito da base do tema" }
   ],
   "presets": [
     {
       "name": "t:sections.footer.name",
       "blocks": [
+        { "type": "benefit" },
         { "type": "brand" },
         { "type": "menu" },
         { "type": "newsletter" }

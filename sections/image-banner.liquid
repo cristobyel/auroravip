@@ -82,8 +82,8 @@
   .image-banner__content--right { text-align: right; }
   .image-banner__box { max-width: 640px; padding: 40px 20px; }
   .image-banner__content--right .image-banner__box { margin-left: auto; }
-  .image-banner__heading { font-size: var(--f8); color: var(--color-background); margin-bottom: 16px; text-shadow: 0 2px 12px rgba(0,0,0,0.35); }
-  .image-banner__text { font-size: var(--f3); color: var(--color-background); margin-bottom: 24px; text-shadow: 0 2px 12px rgba(0,0,0,0.35); }
+  .image-banner__heading { font-size: var(--f8); color: var(--color-cream-text); margin-bottom: 16px; text-shadow: 0 2px 12px rgba(0,0,0,0.35); }
+  .image-banner__text { font-size: var(--f3); color: var(--color-cream-text); margin-bottom: 24px; text-shadow: 0 2px 12px rgba(0,0,0,0.35); }
   .image-banner__buttons { display: flex; gap: 12px; flex-wrap: wrap; }
   .image-banner__content--center .image-banner__buttons { justify-content: center; }
   .image-banner::after { content: ''; position: absolute; inset: 0; background: rgba(0,0,0,0.15); z-index: 1; }
@@ -129,7 +129,7 @@
       "name": "t:sections.image_banner.blocks.heading.name",
       "limit": 1,
       "settings": [
-        { "type": "text", "id": "heading", "default": "Image banner heading", "label": "t:sections.image_banner.blocks.heading.settings.heading.label" }
+        { "type": "text", "id": "heading", "default": "Título do banner", "label": "t:sections.image_banner.blocks.heading.settings.heading.label" }
       ]
     },
     {
@@ -137,7 +137,7 @@
       "name": "t:sections.image_banner.blocks.text.name",
       "limit": 1,
       "settings": [
-        { "type": "richtext", "id": "text", "default": "<p>Discover the latest collection.</p>", "label": "t:sections.image_banner.blocks.text.settings.text.label" }
+        { "type": "richtext", "id": "text", "default": "<p>Descubra a nova coleção.</p>", "label": "t:sections.image_banner.blocks.text.settings.text.label" }
       ]
     },
     {
@@ -145,7 +145,7 @@
       "name": "t:sections.image_banner.blocks.button.name",
       "limit": 1,
       "settings": [
-        { "type": "text", "id": "button_label", "default": "Shop now", "label": "t:sections.image_banner.blocks.button.settings.button_label.label" },
+        { "type": "text", "id": "button_label", "default": "Comprar agora", "label": "t:sections.image_banner.blocks.button.settings.button_label.label" },
         { "type": "url", "id": "button_link", "label": "t:sections.image_banner.blocks.button.settings.button_link.label" },
         { "type": "text", "id": "button_label_2", "label": "t:sections.image_banner.blocks.button.settings.button_label_2.label" },
         { "type": "url", "id": "button_link_2", "label": "t:sections.image_banner.blocks.button.settings.button_link_2.label" }

@@ -127,8 +127,9 @@ cabeçalho/rodapé (permitem reordenar no editor).
 | Arquivo | Função |
 |---|---|
 | `header-group.json` / `footer-group.json` | Agrupadores de cabeçalho e rodapé |
-| `nav.liquid` | Cabeçalho: logo, menu multinível, busca, carrinho, seletor de país/idioma |
-| `footer.liquid` | Rodapé: blocos (marca, menu, texto, newsletter), redes, ícones de pagamento |
+| `nav.liquid` | Cabeçalho Aurora VIP: logo centralizada em destaque, menu à esquerda, busca/conta/carrinho à direita, fixo e compacto ao rolar, gaveta no mobile |
+| `announcement-bar.liquid` | Barra dourada de avisos acima do cabeçalho (mensagens rotativas) |
+| `footer.liquid` | Rodapé preto/dourado: faixa de diferenciais, marca + redes sociais, menus, newsletter, pagamento e voltar ao topo |
 | `main-product.liquid` | Página de produto: galeria, variantes, add-to-cart nativo, blocos |
 | `main-cart.liquid` | Carrinho: itens, quantidade, notas, checkout |
 | `main-collection.liquid` | Grade de produtos: ordenação, filtros, paginação |
@@ -144,6 +145,10 @@ cabeçalho/rodapé (permitem reordenar no editor).
 | `featured-collection.liquid` | Coleção em destaque (grade de produtos) — home |
 | `collection-list.liquid` | Lista de coleções em cards — home |
 | `rich-text.liquid` | Bloco de texto rico centralizado — home |
+| `hero-slider.liquid` | Hero da home em slider (imagem + setas/pontos, texto opcional) — usa `assets/aurora-banner.webp` por padrão |
+| `promo-cards.liquid` | Cards promocionais arredondados com imagem, texto e botão — home |
+| `product-showcase.liquid` | Vitrine de produtos com preço, tag, descrição e botões *Adicionar ao carrinho* / *Comprar agora* — home |
+| `collection-mosaic.liquid` | Mosaico de até 3 coleções (1 card grande + 2 empilhados) — home |
 | `related-products.liquid` | Produtos relacionados (API de recomendações) |
 
 ### `snippets/`
@@ -176,6 +181,8 @@ Pedaços reutilizáveis chamados via `{% render 'nome' %}`.
 | `fontes.css` | Placeholder para fontes próprias (por padrão usa fontes do Shopify) |
 | `carrinho.js` | Add-to-cart via AJAX + atualização do contador (com fallback nativo) |
 | `site.webmanifest` | Manifesto PWA |
+| `aurora-logo.png` | Logo Aurora VIP (PNG com fundo transparente) — usada no cabeçalho quando nenhuma logo é escolhida no editor |
+| `aurora-banner.webp` | Banner da home — usado pelo `hero-slider` quando o slide não tem imagem escolhida no editor |
 
 ### `config/`
 | Arquivo | Função |
@@ -186,8 +193,8 @@ Pedaços reutilizáveis chamados via `{% render 'nome' %}`.
 ### `locales/`
 | Arquivo | Função |
 |---|---|
-| `en.default.json` | Textos traduzíveis exibidos na loja (idioma padrão: inglês) |
-| `en.default.schema.json` | Rótulos traduzíveis do editor de tema |
+| `pt-BR.default.json` | Textos exibidos na loja (idioma padrão do tema: português do Brasil) |
+| `pt-BR.default.schema.json` | Rótulos do editor de tema em português |
 
 ---
 
@@ -199,7 +206,7 @@ Pedaços reutilizáveis chamados via `{% render 'nome' %}`.
   viram CSS variables em `snippets/css-variables.liquid`. Para mudar a aparência,
   mexa nas settings — não no CSS.
 - **i18n**: todo texto visível usa chaves de tradução (`{{ 'chave' | t }}`).
-  Para adicionar outro idioma, crie `locales/pt-BR.json` (e `pt-BR.schema.json`).
+  Para adicionar outro idioma, crie `locales/en.json` (e `en.schema.json`).
 - **Formulários nativos**: carrinho, contato, busca e newsletter usam as tags
   `{% form %}` do Shopify — funcionam mesmo sem JavaScript.
 

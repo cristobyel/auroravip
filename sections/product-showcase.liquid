@@ -1,0 +1,266 @@
+{%- comment -%}
+  ============================================================
+  PRODUCT SHOWCASE — vitrine de produtos com "Adicionar" e "Comprar agora"
+  ============================================================
+
+  O QUE FAZ:
+  Titulo serifado centralizado + subtitulo + grade de produtos de UMA colecao.
+  Cada card mostra imagem (com troca no hover), preco, tag (tipo do produto),
+  titulo, descricao curta e dois botoes: "Adicionar ao carrinho" (AJAX via
+  assets/carrinho.js) e "Comprar agora" (vai direto ao checkout).
+  Estilo da secao "Newly Dropped Collections" do layout de referencia.
+
+  ONDE E USADA:
+  templates/index.json (pode ser adicionada varias vezes, com colecoes
+  diferentes: lancamentos, mais vendidos...).
+
+  PRINCIPAIS PARTES:
+  - Settings: heading, subheading, collection, products_to_show,
+    columns_desktop, textos dos botoes, botao "ver toda a colecao".
+  - Produto com 1 variante: formulario nativo {% form 'product' %} com os dois
+    botoes. Produto com varias variantes: botao unico "Escolher opcoes" que
+    leva a pagina do produto (o cliente precisa escolher tamanho/cor).
+  - Produto esgotado: botao desativado.
+  - Sem colecao escolhida: mostra cards de exemplo (placeholders).
+
+  OBSERVACOES:
+  "Comprar agora" usa <button name="checkout">. Como carrinho.js intercepta os
+  envios para /cart/add via AJAX, o script no fim deste arquivo deixa esse
+  botao seguir o envio nativo (que redireciona para o checkout).
+  O texto do alerta "adicionado" vem de window.themeStrings.addedToCart.
+{%- endcomment -%}
+{%- liquid
+  assign collection = collections[section.settings.collection]
+  assign limit = section.settings.products_to_show | plus: 0
+-%}
+<div class="showcase page-width" data-section-id="{{ section.id }}" style="--showcase-cols: {{ section.settings.columns_desktop }};">
+  {%- if section.settings.heading != blank or section.settings.subheading != blank -%}
+    <div class="section-heading">
+      {%- if section.settings.heading != blank -%}
+        <h2 class="section-heading__title">{{ section.settings.heading | escape }}</h2>
+      {%- endif -%}
+      {%- if section.settings.subheading != blank -%}
+        <p class="section-heading__text">{{ section.settings.subheading | escape }}</p>
+      {%- endif -%}
+    </div>
+  {%- endif -%}
+
+  <ul class="showcase__grid" role="list">
+    {%- if collection.products.size > 0 -%}
+      {%- for product in collection.products limit: limit -%}
+        <li class="showcase-card">
+          <a href="{{ product.url }}" class="showcase-card__media" tabindex="-1" aria-hidden="true">
+            {%- if product.featured_media -%}
+              {{
+                product.featured_media
+                | image_url: width: 720
+                | image_tag:
+                  loading: 'lazy',
+                  class: 'showcase-card__image showcase-card__image--primary',
+                  widths: '360, 540, 720',
+                  sizes: '(min-width: 1000px) 28vw, 46vw',
+                  alt: product.featured_media.alt | default: product.title
+              }}
+              {%- if settings.card_show_second_image and product.media[1] -%}
+                {{
+                  product.media[1]
+                  | image_url: width: 720
+                  | image_tag:
+                    loading: 'lazy',
+                    class: 'showcase-card__image showcase-card__image--secondary',
+                    widths: '360, 540, 720',
+                    sizes: '(min-width: 1000px) 28vw, 46vw',
+                    alt: ''
+                }}
+              {%- endif -%}
+            {%- else -%}
+              {{ 'product-1' | placeholder_svg_tag: 'showcase-card__image placeholder-svg' }}
+            {%- endif -%}
+
+            {%- if product.available == false -%}
+              <span class="showcase-card__badge showcase-card__badge--muted">{{ section.settings.soldout_label | escape }}</span>
+            {%- elsif product.compare_at_price > product.price -%}
+              <span class="showcase-card__badge">{{ section.settings.sale_label | escape }}</span>
+            {%- endif -%}
+          </a>
+
+          <div class="showcase-card__meta">
+            {% render 'price', product: product, use_variant: false, show_compare: true, price_class: 'price--showcase' %}
+            {%- if product.type != blank -%}
+              <span class="showcase-card__chip">{{ product.type | escape }}</span>
+            {%- endif -%}
+          </div>
+
+          <h3 class="showcase-card__title"><a href="{{ product.url }}">{{ product.title | escape }}</a></h3>
+
+          {%- if product.description != blank -%}
+            <p class="showcase-card__desc">{{ product.description | strip_html | truncatewords: 14 }}</p>
+          {%- endif -%}
+
+          <div class="showcase-card__actions">
+            {%- if product.available == false -%}
+              <button type="button" class="button button--soft button--small showcase-card__single" disabled>{{ section.settings.soldout_label | escape }}</button>
+            {%- elsif product.variants.size > 1 -%}
+              <a href="{{ product.url }}" class="button button--gold button--small showcase-card__single">{{ section.settings.options_label | escape }}</a>
+            {%- else -%}
+              {%- form 'product', product, class: 'showcase-card__form' -%}
+                <input type="hidden" name="id" value="{{ product.selected_or_first_available_variant.id }}">
+                <button type="submit" name="add" class="button button--soft button--small">{{ section.settings.add_label | escape }}</button>
+                <button type="submit" name="checkout" class="button button--gold button--small">{{ section.settings.buy_label | escape }}</button>
+              {%- endform -%}
+            {%- endif -%}
+          </div>
+        </li>
+      {%- endfor -%}
+    {%- else -%}
+      {%- for i in (1..limit) -%}
+        <li class="showcase-card">
+          <div class="showcase-card__media">{{ 'product-1' | placeholder_svg_tag: 'showcase-card__image placeholder-svg' }}</div>
+          <div class="showcase-card__meta"><span class="price"><span class="price__regular">R$ 0,00</span></span><span class="showcase-card__chip">Categoria</span></div>
+          <h3 class="showcase-card__title">{{ 'onboarding.product_title' | t }}</h3>
+          <p class="showcase-card__desc">Escolha uma coleção nas configurações da seção para exibir seus produtos aqui.</p>
+          <div class="showcase-card__actions">
+            <span class="button button--soft button--small">{{ section.settings.add_label | escape }}</span>
+            <span class="button button--gold button--small">{{ section.settings.buy_label | escape }}</span>
+          </div>
+        </li>
+      {%- endfor -%}
+    {%- endif -%}
+  </ul>
+
+  {%- if section.settings.view_all_label != blank and collection.url != blank -%}
+    <div class="showcase__footer">
+      <a href="{{ collection.url }}" class="button button--soft">{{ section.settings.view_all_label | escape }}</a>
+    </div>
+  {%- endif -%}
+</div>
+
+<style>
+  .showcase { padding-top: var(--spacing-sections); }
+  .showcase__grid {
+    display: grid;
+    grid-template-columns: repeat(var(--showcase-cols), minmax(0, 1fr));
+    gap: 36px 24px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+  .showcase-card { display: flex; flex-direction: column; min-width: 0; }
+  .showcase-card__media {
+    position: relative;
+    display: block;
+    aspect-ratio: 1 / 1;
+    overflow: hidden;
+    border-radius: var(--media-radius);
+    background-color: var(--color-background-contrast);
+  }
+  .showcase-card__image { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; transition: transform 0.5s ease, opacity 0.35s ease; }
+  .showcase-card__image--secondary { opacity: 0; }
+  .showcase-card:hover .showcase-card__image--secondary { opacity: 1; }
+  .showcase-card:hover .showcase-card__image--primary { transform: scale(1.03); }
+  .showcase-card__badge {
+    position: absolute;
+    top: 12px;
+    left: 12px;
+    z-index: 2;
+    padding: 4px 12px;
+    font-size: var(--f0);
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--color-ink);
+    background: var(--gradient-gold);
+    border-radius: 999px;
+  }
+  .showcase-card__badge--muted { color: var(--color-cream-text); background: var(--color-ink); }
+
+  .showcase-card__meta { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-top: 14px; }
+  .showcase-card__meta .price { font-size: var(--f3); font-weight: 700; }
+  .showcase-card__meta .price__compare { margin-right: 6px; font-size: var(--f1); font-weight: 400; opacity: 0.5; }
+  .showcase-card__meta .price__badge { display: none; }
+  .showcase-card__chip {
+    max-width: 50%;
+    padding: 3px 10px;
+    overflow: hidden;
+    font-size: var(--f0);
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    color: var(--color-gold-light);
+    background-color: var(--color-background-contrast);
+    border: 1px solid var(--color-border);
+    border-radius: 999px;
+  }
+  .showcase-card__title { margin: 8px 0 0; font-size: var(--f3); line-height: 1.3; }
+  .showcase-card__title a { color: inherit; text-decoration: none; }
+  .showcase-card__title a:hover { color: var(--color-gold-light); }
+  .showcase-card__desc {
+    margin: 6px 0 0;
+    font-size: var(--f1);
+    line-height: 1.5;
+    opacity: 0.6;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+  .showcase-card__actions { margin-top: auto; padding-top: 16px; }
+  .showcase-card__form { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin: 0; }
+  .showcase-card__form .button,
+  .showcase-card__actions > .button { width: 100%; white-space: nowrap; }
+  .showcase-card__form .button[aria-busy='true'] { opacity: 0.6; pointer-events: none; }
+  .showcase-card__actions > span.button { cursor: default; }
+  .showcase__footer { display: flex; justify-content: center; margin-top: 40px; }
+
+  @media screen and (max-width: 999px) {
+    .showcase__grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 28px 14px; }
+  }
+  @media screen and (max-width: 520px) {
+    .showcase-card__form { grid-template-columns: 1fr; }
+    .showcase-card__desc { display: none; }
+  }
+</style>
+
+<script>
+  (function () {
+    // Mensagem exibida pelo toast quando um produto e adicionado ao carrinho
+    window.themeStrings = window.themeStrings || {};
+    window.themeStrings.addedToCart = {{ section.settings.added_message | json }};
+
+    // "Comprar agora": nao deixa o carrinho.js interceptar (AJAX); segue o envio nativo ate o checkout
+    if (window.__auroraBuyNow) return;
+    window.__auroraBuyNow = true;
+    document.addEventListener(
+      'submit',
+      function (event) {
+        var submitter = event.submitter;
+        if (submitter && submitter.name === 'checkout' && event.target.matches('form[action$="/cart/add"]')) {
+          event.stopPropagation();
+        }
+      },
+      true
+    );
+  })();
+</script>
+
+{% schema %}
+{
+  "name": "Vitrine de produtos",
+  "tag": "section",
+  "settings": [
+    { "type": "text", "id": "heading", "label": "Título", "default": "Lançamentos" },
+    { "type": "textarea", "id": "subheading", "label": "Subtítulo", "default": "Peças novas banhadas a ouro 18k, escolhidas para brilhar no seu dia a dia." },
+    { "type": "collection", "id": "collection", "label": "Coleção" },
+    { "type": "range", "id": "products_to_show", "min": 2, "max": 12, "step": 1, "default": 6, "label": "Quantidade de produtos" },
+    { "type": "range", "id": "columns_desktop", "min": 2, "max": 4, "step": 1, "default": 3, "label": "Colunas no desktop" },
+    { "type": "header", "content": "Textos" },
+    { "type": "text", "id": "add_label", "label": "Botão adicionar", "default": "Adicionar ao carrinho" },
+    { "type": "text", "id": "buy_label", "label": "Botão comprar agora", "default": "Comprar agora" },
+    { "type": "text", "id": "options_label", "label": "Botão produtos com variantes", "default": "Escolher opções" },
+    { "type": "text", "id": "soldout_label", "label": "Esgotado", "default": "Esgotado" },
+    { "type": "text", "id": "sale_label", "label": "Selo de oferta", "default": "Oferta" },
+    { "type": "text", "id": "added_message", "label": "Mensagem ao adicionar ao carrinho", "default": "Produto adicionado ao carrinho!" },
+    { "type": "text", "id": "view_all_label", "label": "Botão ver toda a coleção", "info": "Deixe vazio para ocultar.", "default": "Ver toda a coleção" }
+  ],
+  "presets": [{ "name": "Vitrine de produtos" }]
+}
+{% endschema %}

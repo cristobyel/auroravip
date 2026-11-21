@@ -3,7 +3,41 @@
   "name": "t:section_groups.footer.name",
   "sections": {
     "footer": {
-      "type": "footer"
+      "type": "footer",
+      "blocks": {
+        "brand": {
+          "type": "brand",
+          "settings": {
+            "text": "<p>Joias exclusivas banhadas a ouro 18k. Sofisticação, brilho e a exclusividade que você merece.</p>"
+          }
+        },
+        "menu_shop": {
+          "type": "menu",
+          "settings": {
+            "heading": "Loja",
+            "menu": "main-menu"
+          }
+        },
+        "menu_help": {
+          "type": "menu",
+          "settings": {
+            "heading": "Ajuda",
+            "menu": "footer"
+          }
+        },
+        "newsletter": {
+          "type": "newsletter",
+          "settings": {
+            "heading": "Receba novidades"
+          }
+        }
+      },
+      "block_order": ["brand", "menu_shop", "menu_help", "newsletter"],
+      "settings": {
+        "show_social": true,
+        "show_payment_icons": true,
+        "enable_localization": false
+      }
     }
   },
   "order": ["footer"]

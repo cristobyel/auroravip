@@ -2,9 +2,41 @@
   "type": "header",
   "name": "t:section_groups.header.name",
   "sections": {
+    "announcement": {
+      "type": "announcement-bar",
+      "blocks": {
+        "message_1": {
+          "type": "message",
+          "settings": {
+            "text": "Joias exclusivas banhadas a ouro 18k"
+          }
+        },
+        "message_2": {
+          "type": "message",
+          "settings": {
+            "text": "Sofisticação, brilho e exclusividade"
+          }
+        },
+        "message_3": {
+          "type": "message",
+          "settings": {
+            "text": "Compre com segurança"
+          }
+        }
+      },
+      "block_order": ["message_1", "message_2", "message_3"],
+      "settings": {
+        "speed": 5
+      }
+    },
     "nav": {
-      "type": "nav"
+      "type": "nav",
+      "settings": {
+        "menu": "main-menu",
+        "enable_country_selector": false,
+        "enable_language_selector": false
+      }
     }
   },
-  "order": ["nav"]
+  "order": ["announcement", "nav"]
 }

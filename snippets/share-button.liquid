@@ -6,7 +6,7 @@
   O QUE FAZ:
   Renderiza um botão de compartilhamento que usa a Web Share API nativa
   do navegador. Quando não há suporte, faz fallback copiando o link para
-  a área de transferência e mostra a mensagem "Link copied".
+  a área de transferência e mostra a mensagem "Link copiado".
 
   COMO USAR:
   {% render 'share-button', share_link: product.url, share_title: product.title %}
@@ -18,7 +18,7 @@
 
   OBSERVAÇÕES:
   Registra o custom element <share-button> uma única vez. A URL final é
-  shop.url + share_link. A mensagem de fallback está em inglês no script.
+  shop.url + share_link. A mensagem de fallback está em português no script.
 {%- endcomment -%}
 <share-button class="share-button" data-share-url="{{ shop.url }}{{ share_link }}">
   <button type="button" class="share-button__button button button--secondary">
@@ -43,7 +43,7 @@
           try {
             await navigator.clipboard.writeText(this.url);
             this.message.hidden = false;
-            this.message.textContent = 'Link copied';
+            this.message.textContent = 'Link copiado';
             setTimeout(() => { this.message.hidden = true; }, 2000);
           } catch (e) {}
         }

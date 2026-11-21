@@ -1,99 +1,114 @@
 {%- comment -%}
   ============================================================
-  NAV / HEADER — cabeçalho do site
+  NAV / HEADER — cabeçalho do site (Aurora VIP)
   ============================================================
 
   O QUE FAZ:
-  Monta o cabeçalho da loja: logo, navegação de múltiplos níveis
-  (menu com submenus e sub-submenus), busca, link de conta,
-  contador do carrinho e seletores de localização (país/moeda e
-  idioma). Inclui menu mobile com botão hambúrguer.
+  Cabeçalho premium preto com detalhes dourados: menu à esquerda, LOGO
+  centralizada e em destaque, e ações (busca, conta, carrinho) à direita.
+  Fica fixo no topo e "encolhe" suavemente ao rolar a página (logo menor,
+  menos espaço). No celular o menu vira uma gaveta lateral (drawer).
 
   ONDE É USADA:
-  No layout (layout/theme.liquid), como header fixo presente em
-  todas as páginas. É uma section de grupo/header do tema.
+  sections/header-group.json (depois da barra de avisos), em todas as páginas.
 
   PRINCIPAIS PARTES:
-  - Logo: usa settings.logo (imagem) ou, se vazio, o nome da loja
-    (shop.name) como texto.
-  - header__nav: percorre section.settings.menu.links montando o
-    menu desktop com até 3 níveis (link > child > grandchild).
-  - header__actions: busca (details com painel), conta (só se
-    customer_accounts_enabled) e carrinho com contador
-    data-cart-count baseado em cart.item_count.
-  - Localização: renderiza o snippet 'localization-form' conforme
-    os settings enable_country_selector / enable_language_selector.
-  - header__mobile-nav: menu alternativo para telas <= 1000px,
-    aberto/fechado pelo <script> que alterna aria-expanded/hidden.
+  - Logo: settings.logo (editor) ou, se vazia, assets/aurora-logo.png.
+    Largura vem de settings.logo_width (var CSS --logo-w).
+  - header__nav: menu desktop com até 3 níveis; sublinhado dourado animado
+    no hover e dropdown escuro com borda dourada.
+  - header__search: <details> com painel de busca (fecha com Esc/clique fora).
+  - Drawer mobile: overlay + painel lateral com busca, links (subníveis em
+    sanfona <details>), conta e redes sociais. Fecha com Esc, overlay ou X.
+  - Localização (país/idioma) opcional, desligada por padrão.
 
   OBSERVAÇÕES:
-  - Ícones vêm do snippet 'icon' (search, account, cart, etc.).
-  - O menu é definido no setting menu (link_list, default
-    "main-menu"); submenus só aparecem se o link tiver filhos.
-  - Estilos e o JS do toggle mobile ficam inline neste arquivo.
+  - O wrapper da section (.section-header) é o elemento sticky; a classe
+    is-scrolled é aplicada nele via JS (ver <script> no fim).
+  - Não usar backdrop-filter/transform no wrapper: quebraria o drawer
+    (position: fixed) dentro dele.
+  - Ícones vêm do snippet 'icon'.
 {%- endcomment -%}
-<header class="header page-width" data-section-id="{{ section.id }}">
-  <div class="header__inner">
-    <button
-      type="button"
-      class="header__menu-toggle tap-target"
-      aria-label="{{ 'sections.header.menu' | t }}"
-      aria-expanded="false"
-      aria-controls="MobileNav-{{ section.id }}"
-    >
-      <span class="header__burger"></span>
-    </button>
+{%- liquid
+  assign logo_ratio = 0.42
+  if settings.logo != blank
+    assign logo_ratio = settings.logo.aspect_ratio | default: 2.4
+    assign logo_ratio = 1 | divided_by: logo_ratio
+  endif
+  assign logo_height = settings.logo_width | times: logo_ratio | round
+-%}
+<header class="header" data-section-id="{{ section.id }}" style="--logo-w: {{ settings.logo_width }}px;">
+  <div class="header__inner page-width">
+    <div class="header__left">
+      <button
+        type="button"
+        class="header__menu-toggle tap-target"
+        data-menu-toggle
+        aria-label="{{ 'sections.header.menu' | t }}"
+        aria-expanded="false"
+        aria-controls="MobileNav-{{ section.id }}">
+        <svg width="26" height="26" viewBox="0 0 26 26" fill="none" aria-hidden="true" focusable="false"><path d="M4 8h18M4 13h12M4 18h18" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>
+      </button>
 
-    <a href="{{ routes.root_url }}" class="header__logo-link">
+      <nav class="header__nav" aria-label="{{ 'sections.header.menu' | t }}">
+        <ul class="header__menu" role="list">
+          {%- for link in section.settings.menu.links -%}
+            <li class="header__menu-item {% if link.links != blank %}header__menu-item--has-dropdown{% endif %}">
+              <a href="{{ link.url }}" class="header__menu-link" {% if link.current %}aria-current="page"{% endif %}>
+                {{ link.title | escape }}
+                {%- if link.links != blank -%}<span class="header__menu-caret">{% render 'icon', name: 'chevron' %}</span>{%- endif -%}
+              </a>
+              {%- if link.links != blank -%}
+                <ul class="header__submenu" role="list">
+                  {%- for child in link.links -%}
+                    <li class="header__submenu-item {% if child.links != blank %}header__submenu-item--has-dropdown{% endif %}">
+                      <a href="{{ child.url }}" class="header__submenu-link">{{ child.title | escape }}</a>
+                      {%- if child.links != blank -%}
+                        <ul class="header__submenu header__submenu--nested" role="list">
+                          {%- for grandchild in child.links -%}
+                            <li><a href="{{ grandchild.url }}" class="header__submenu-link">{{ grandchild.title | escape }}</a></li>
+                          {%- endfor -%}
+                        </ul>
+                      {%- endif -%}
+                    </li>
+                  {%- endfor -%}
+                </ul>
+              {%- endif -%}
+            </li>
+          {%- endfor -%}
+        </ul>
+      </nav>
+    </div>
+
+    <a href="{{ routes.root_url }}" class="header__logo-link" aria-label="{{ shop.name | escape }}">
       {%- if settings.logo != blank -%}
-        {%- assign logo_alt = shop.name | escape -%}
-        {%- assign logo_height = settings.logo_width | divided_by: settings.logo.aspect_ratio -%}
         {{
           settings.logo
-          | image_url: width: 600
+          | image_url: width: 800
           | image_tag:
             class: 'header__logo-image',
-            widths: '150, 300, 450, 600',
+            widths: '200, 400, 600, 800',
             width: settings.logo_width,
             height: logo_height,
-            alt: logo_alt,
-            sizes: '(max-width: 1000px) 40vw, 200px'
+            alt: shop.name,
+            sizes: '(max-width: 1000px) 140px, 220px',
+            loading: 'eager',
+            fetchpriority: 'high'
         }}
       {%- else -%}
-        <span class="header__logo-text">{{ shop.name }}</span>
+        {%- comment -%} Fallback: assets/aurora-logo.png (usada quando nenhuma logo é escolhida no editor) {%- endcomment -%}
+        <img
+          class="header__logo-image"
+          src="{{ 'aurora-logo.png' | asset_url }}"
+          width="{{ settings.logo_width }}"
+          height="{{ logo_height }}"
+          alt="{{ shop.name | escape }}"
+          fetchpriority="high">
       {%- endif -%}
     </a>
 
-    <nav class="header__nav" role="navigation" aria-label="{{ 'sections.header.menu' | t }}">
-      <ul class="header__menu" role="list">
-        {%- for link in section.settings.menu.links -%}
-          <li class="header__menu-item {% if link.links != blank %}header__menu-item--has-dropdown{% endif %}">
-            <a href="{{ link.url }}" class="header__menu-link" {% if link.current %}aria-current="page"{% endif %}>
-              {{ link.title | escape }}
-            </a>
-            {%- if link.links != blank -%}
-              <ul class="header__submenu" role="list">
-                {%- for child in link.links -%}
-                  <li class="header__submenu-item {% if child.links != blank %}header__submenu-item--has-dropdown{% endif %}">
-                    <a href="{{ child.url }}" class="header__submenu-link">{{ child.title | escape }}</a>
-                    {%- if child.links != blank -%}
-                      <ul class="header__submenu header__submenu--nested" role="list">
-                        {%- for grandchild in child.links -%}
-                          <li><a href="{{ grandchild.url }}" class="header__submenu-link">{{ grandchild.title | escape }}</a></li>
-                        {%- endfor -%}
-                      </ul>
-                    {%- endif -%}
-                  </li>
-                {%- endfor -%}
-              </ul>
-            {%- endif -%}
-          </li>
-        {%- endfor -%}
-      </ul>
-    </nav>
-
     <div class="header__actions">
-      <details class="header__search">
+      <details class="header__search" data-search>
         <summary class="header__action-button tap-target" aria-label="{{ 'general.search.search' | t }}">
           {% render 'icon', name: 'search' %}
         </summary>
@@ -105,15 +120,17 @@
               value="{{ search.terms | escape }}"
               placeholder="{{ 'general.search.placeholder' | t }}"
               aria-label="{{ 'general.search.search' | t }}"
-              class="field__input"
-            >
-            <button type="submit" class="visually-hidden">{{ 'general.search.submit' | t }}</button>
+              class="header__search-input"
+              autocomplete="off">
+            <button type="submit" class="header__search-submit" aria-label="{{ 'general.search.submit' | t }}">
+              {% render 'icon', name: 'search' %}
+            </button>
           </form>
         </div>
       </details>
 
       {%- if shop.customer_accounts_enabled -%}
-        <a href="{{ routes.account_url }}" class="header__action-button tap-target" aria-label="{{ 'customer.account.title' | t }}">
+        <a href="{{ routes.account_url }}" class="header__action-button header__account tap-target" aria-label="{{ 'customer.account.title' | t }}">
           {% render 'icon', name: 'account' %}
         </a>
       {%- endif -%}
@@ -126,7 +143,7 @@
   </div>
 
   {%- if section.settings.enable_country_selector or section.settings.enable_language_selector -%}
-    <div class="header__localization">
+    <div class="header__localization page-width">
       {% render 'localization-form',
         section_id: section.id,
         show_country: section.settings.enable_country_selector,
@@ -136,168 +153,435 @@
   {%- endif -%}
 </header>
 
-<div class="header__mobile-nav" id="MobileNav-{{ section.id }}" hidden>
-  <ul class="header__mobile-menu" role="list">
+<div class="header__overlay" data-overlay></div>
+
+<aside class="header__drawer" id="MobileNav-{{ section.id }}" data-drawer aria-hidden="true" aria-label="{{ 'sections.header.menu' | t }}">
+  <div class="header__drawer-top">
+    <a href="{{ routes.root_url }}" class="header__drawer-logo" aria-label="{{ shop.name | escape }}">
+      <img src="{% if settings.logo != blank %}{{ settings.logo | image_url: width: 400 }}{% else %}{{ 'aurora-logo.png' | asset_url }}{% endif %}" width="130" height="{{ 130 | times: logo_ratio | round }}" alt="{{ shop.name | escape }}" loading="lazy">
+    </a>
+    <button type="button" class="header__drawer-close tap-target" data-menu-close aria-label="{{ 'sections.header.close_menu' | t }}">
+      {% render 'icon', name: 'close' %}
+    </button>
+  </div>
+
+  <form action="{{ routes.search_url }}" method="get" role="search" class="header__drawer-search">
+    <input type="search" name="q" placeholder="{{ 'general.search.placeholder' | t }}" aria-label="{{ 'general.search.search' | t }}" class="header__search-input" autocomplete="off">
+    <button type="submit" class="header__search-submit" aria-label="{{ 'general.search.submit' | t }}">
+      {% render 'icon', name: 'search' %}
+    </button>
+  </form>
+
+  <ul class="header__drawer-menu" role="list">
     {%- for link in section.settings.menu.links -%}
       <li>
-        <a href="{{ link.url }}" class="header__mobile-link">{{ link.title | escape }}</a>
         {%- if link.links != blank -%}
-          <ul role="list" class="header__mobile-submenu">
-            {%- for child in link.links -%}
-              <li><a href="{{ child.url }}" class="header__mobile-link header__mobile-link--child">{{ child.title | escape }}</a></li>
-            {%- endfor -%}
-          </ul>
+          <details class="header__drawer-group">
+            <summary class="header__drawer-link">
+              <span>{{ link.title | escape }}</span>
+              <span class="header__drawer-chevron">{% render 'icon', name: 'chevron' %}</span>
+            </summary>
+            <ul class="header__drawer-sub" role="list">
+              <li><a href="{{ link.url }}" class="header__drawer-sublink">{{ link.title | escape }}</a></li>
+              {%- for child in link.links -%}
+                <li><a href="{{ child.url }}" class="header__drawer-sublink">{{ child.title | escape }}</a></li>
+              {%- endfor -%}
+            </ul>
+          </details>
+        {%- else -%}
+          <a href="{{ link.url }}" class="header__drawer-link" {% if link.current %}aria-current="page"{% endif %}>
+            <span>{{ link.title | escape }}</span>
+          </a>
         {%- endif -%}
       </li>
     {%- endfor -%}
   </ul>
-</div>
+
+  <div class="header__drawer-bottom">
+    {%- if shop.customer_accounts_enabled -%}
+      <a href="{{ routes.account_url }}" class="header__drawer-account">
+        {% render 'icon', name: 'account' %}
+        <span>{{ 'customer.account.title' | t }}</span>
+      </a>
+    {%- endif -%}
+    <ul class="header__drawer-social" role="list">
+      {%- if settings.social_instagram_link != blank -%}
+        <li><a href="{{ settings.social_instagram_link }}" aria-label="Instagram" rel="noopener" target="_blank">{% render 'icon', name: 'instagram' %}</a></li>
+      {%- endif -%}
+      {%- if settings.social_whatsapp_link != blank -%}
+        <li><a href="{{ settings.social_whatsapp_link }}" aria-label="WhatsApp" rel="noopener" target="_blank">{% render 'icon', name: 'whatsapp' %}</a></li>
+      {%- endif -%}
+      {%- if settings.social_tiktok_link != blank -%}
+        <li><a href="{{ settings.social_tiktok_link }}" aria-label="TikTok" rel="noopener" target="_blank">{% render 'icon', name: 'tiktok' %}</a></li>
+      {%- endif -%}
+      {%- if settings.social_facebook_link != blank -%}
+        <li><a href="{{ settings.social_facebook_link }}" aria-label="Facebook" rel="noopener" target="_blank">{% render 'icon', name: 'facebook' %}</a></li>
+      {%- endif -%}
+    </ul>
+  </div>
+</aside>
 
 <style>
-  .header__inner {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 20px;
-    padding: 16px 0;
+  /* ---------- Wrapper fixo ---------- */
+  .header .tap-target,
+  .header__drawer .tap-target { min-width: 44px; min-height: 44px; padding: 0; }
+  .section-header {
+    --header-text: var(--color-cream-text);
+    position: sticky;
+    top: 0;
+    z-index: 40;
+    background-color: var(--color-ink);
+    transition: box-shadow 0.3s ease;
   }
-  .header__logo-image { display: block; height: auto; }
-  .header__logo-text { font-family: var(--font-heading-family); font-size: var(--f4); }
-  .header__nav { flex: 1; }
-  .header__menu {
-    display: flex;
+  /* Fio dourado em degradê na base do cabeçalho */
+  .section-header::after {
+    content: '';
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    height: 1px;
+    background: linear-gradient(90deg, transparent 0%, rgba(209, 164, 77, 0.65) 18%, var(--color-gold-light) 50%, rgba(209, 164, 77, 0.65) 82%, transparent 100%);
+    pointer-events: none;
+  }
+  .section-header.is-scrolled { box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35); }
+  html.header-lock { overflow: hidden; }
+
+  /* ---------- Barra principal: menu | logo | ações ---------- */
+  .header__inner {
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
     align-items: center;
     gap: 24px;
-    margin: 0;
-    padding: 0;
-    list-style: none;
+    padding-block: 16px;
+    transition: padding 0.3s ease;
   }
+  .section-header.is-scrolled .header__inner { padding-block: 8px; }
+  .header__left { display: flex; align-items: center; gap: 8px; min-width: 0; }
+
+  /* ---------- Logo ---------- */
+  .header__logo-link { display: inline-flex; justify-content: center; line-height: 0; }
+  .header__logo-image {
+    display: block;
+    width: var(--logo-w);
+    max-width: none;
+    height: auto;
+    filter: drop-shadow(0 2px 14px rgba(209, 164, 77, 0.28));
+    transition: width 0.3s ease, filter 0.3s ease, transform 0.3s ease;
+  }
+  .header__logo-link:hover .header__logo-image { filter: drop-shadow(0 2px 18px rgba(242, 217, 143, 0.5)) brightness(1.06); transform: scale(1.02); }
+  .section-header.is-scrolled .header__logo-image { width: calc(var(--logo-w) * 0.68); }
+
+  /* ---------- Menu desktop ---------- */
+  .header__menu { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 30px; margin: 0; padding: 0; list-style: none; }
   .header__menu-item { position: relative; }
   .header__menu-link,
   .header__submenu-link {
-    font-family: var(--font-heading-family);
-    font-size: var(--f2);
-    color: var(--color-text);
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 10px 0;
+    font-family: var(--font-body-family);
+    font-size: 0.78rem;
+    font-weight: 600;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--header-text);
     text-decoration: none;
-    padding: 8px 0;
-    display: inline-block;
+    transition: color 0.2s ease;
   }
+  .header__menu-link { position: relative; }
+  .header__menu-link::after {
+    content: '';
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 4px;
+    height: 1px;
+    background: var(--gradient-gold);
+    transform: scaleX(0);
+    transform-origin: left;
+    transition: transform 0.3s ease;
+  }
+  .header__menu-link:hover,
+  .header__menu-link[aria-current='page'],
+  .header__menu-item:focus-within > .header__menu-link { color: var(--color-gold-light); }
+  .header__menu-link:hover::after,
+  .header__menu-link[aria-current='page']::after,
+  .header__menu-item:focus-within > .header__menu-link::after { transform: scaleX(1); }
+  .header__menu-caret { display: inline-flex; opacity: 0.7; transition: transform 0.25s ease; }
+  .header__menu-caret svg { width: 11px; height: 11px; }
+  .header__menu-item--has-dropdown:hover .header__menu-caret { transform: rotate(180deg); }
+
+  /* Dropdown */
   .header__submenu {
     position: absolute;
     top: 100%;
-    left: 0;
-    min-width: 200px;
+    left: -18px;
+    min-width: 230px;
     margin: 0;
-    padding: 8px 0;
+    padding: 10px;
     list-style: none;
-    background-color: var(--color-background);
-    border: 1px solid var(--color-border);
-    border-radius: var(--inputs-radius);
+    background-color: var(--color-ink-soft);
+    border: 1px solid rgba(209, 164, 77, 0.35);
+    border-top: 2px solid var(--color-gold);
+    border-radius: 0 0 14px 14px;
+    box-shadow: 0 24px 40px rgba(0, 0, 0, 0.45);
     opacity: 0;
     visibility: hidden;
-    transform: translateY(6px);
-    transition: opacity 0.15s ease, transform 0.15s ease, visibility 0.15s;
+    transform: translateY(8px);
+    transition: opacity 0.2s ease, transform 0.2s ease, visibility 0.2s;
     z-index: 20;
   }
-  .header__submenu--nested { top: 0; left: 100%; }
+  .header__submenu--nested { top: -10px; left: 100%; border-radius: 14px; border-top-width: 1px; }
   .header__menu-item--has-dropdown:hover > .header__submenu,
   .header__menu-item--has-dropdown:focus-within > .header__submenu,
   .header__submenu-item--has-dropdown:hover > .header__submenu,
-  .header__submenu-item--has-dropdown:focus-within > .header__submenu {
-    opacity: 1;
-    visibility: visible;
-    transform: translateY(0);
-  }
+  .header__submenu-item--has-dropdown:focus-within > .header__submenu { opacity: 1; visibility: visible; transform: translateY(0); }
   .header__submenu-item { position: relative; }
-  .header__submenu-link { padding: 6px 16px; width: 100%; }
-  .header__actions { display: flex; align-items: center; gap: 8px; }
+  .header__submenu-link { display: flex; width: 100%; padding: 10px 14px; border-radius: 8px; letter-spacing: 0.1em; font-size: 0.74rem; box-sizing: border-box; }
+  .header__submenu-link:hover { color: var(--color-gold-light); background-color: rgba(209, 164, 77, 0.1); }
+
+  /* ---------- Ações (direita) ---------- */
+  .header__actions { display: flex; align-items: center; justify-content: flex-end; gap: 4px; }
   .header__action-button {
+    position: relative;
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    position: relative;
-    color: var(--color-text);
+    color: var(--header-text);
     background: none;
-    border: none;
+    border: 0;
+    border-radius: 50%;
     cursor: pointer;
     text-decoration: none;
+    transition: color 0.2s ease, background-color 0.2s ease;
   }
+  .header__action-button:hover { color: var(--color-gold-light); background-color: rgba(209, 164, 77, 0.1); }
   .header__action-button svg { width: 22px; height: 22px; }
   .header__cart-count {
     position: absolute;
-    top: 2px;
-    right: 2px;
+    top: 3px;
+    right: 1px;
     min-width: 18px;
     height: 18px;
     padding: 0 4px;
     font-size: 11px;
+    font-weight: 700;
     line-height: 18px;
     text-align: center;
-    color: var(--color-accent-text);
-    background-color: var(--color-accent);
+    color: var(--color-ink);
+    background: var(--gradient-gold);
     border-radius: 9px;
+    box-sizing: border-box;
   }
+
+  /* Busca (painel suspenso) */
   .header__search { position: relative; }
   .header__search summary { list-style: none; }
   .header__search summary::-webkit-details-marker { display: none; }
+  .header__search[open] > summary { color: var(--color-gold-light); }
   .header__search-panel {
     position: absolute;
-    top: 100%;
+    top: calc(100% + 14px);
     right: 0;
-    width: 320px;
+    width: 360px;
     max-width: 90vw;
-    padding: 12px;
-    background-color: var(--color-background);
-    border: 1px solid var(--color-border);
-    border-radius: var(--inputs-radius);
-    z-index: 20;
+    padding: 14px;
+    background-color: var(--color-ink-soft);
+    border: 1px solid rgba(209, 164, 77, 0.35);
+    border-radius: 16px;
+    box-shadow: 0 24px 40px rgba(0, 0, 0, 0.45);
+    z-index: 30;
   }
-  .header__menu-toggle { display: none; background: none; border: none; }
-  .header__burger,
-  .header__burger::before,
-  .header__burger::after {
-    display: block;
-    width: 22px;
-    height: 2px;
-    background-color: var(--color-text);
-    transition: transform 0.2s ease;
+  .header__search-form,
+  .header__drawer-search { position: relative; display: flex; align-items: center; }
+  .header__search-input {
+    width: 100%;
+    min-height: 46px;
+    padding: 0 52px 0 18px;
+    font-family: var(--font-body-family);
+    font-size: var(--f2);
+    color: var(--color-cream-text);
+    background-color: #000;
+    border: 1px solid rgba(209, 164, 77, 0.35);
+    border-radius: 999px;
+    box-sizing: border-box;
   }
-  .header__burger { position: relative; }
-  .header__burger::before { content: ''; position: absolute; top: -7px; }
-  .header__burger::after { content: ''; position: absolute; top: 7px; }
-  .header__mobile-nav {
-    padding: 16px 20px;
-    border-top: 1px solid var(--color-border);
+  .header__search-input::placeholder { color: rgba(244, 236, 216, 0.5); }
+  .header__search-input:focus { outline: none; border-color: var(--color-gold-light); }
+  .header__search-submit {
+    position: absolute;
+    right: 5px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    padding: 0;
+    color: var(--color-ink);
+    background: var(--gradient-gold);
+    border: 0;
+    border-radius: 50%;
+    cursor: pointer;
   }
-  .header__mobile-menu, .header__mobile-submenu { list-style: none; margin: 0; padding: 0; }
-  .header__mobile-link { display: block; padding: 12px 0; font-size: var(--f3); color: var(--color-text); text-decoration: none; }
-  .header__mobile-link--child { padding-left: 16px; font-size: var(--f2); opacity: 0.8; }
-  .header__localization { padding: 8px 0; }
+  .header__search-submit svg { width: 18px; height: 18px; }
+  .header__localization { padding-bottom: 8px; }
 
+  /* ---------- Gaveta mobile ---------- */
+  .header__menu-toggle { display: none; color: var(--header-text); background: none; border: 0; cursor: pointer; margin-left: -10px; }
+  .header__menu-toggle:hover { color: var(--color-gold-light); }
+  .header__overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 60;
+    background: rgba(0, 0, 0, 0.6);
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.3s ease, visibility 0.3s;
+  }
+  .header__drawer {
+    position: fixed;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    z-index: 70;
+    display: flex;
+    flex-direction: column;
+    width: min(86vw, 380px);
+    padding: 20px 22px 24px;
+    overflow-y: auto;
+    color: var(--header-text);
+    background: linear-gradient(180deg, #14110b 0%, var(--color-ink) 100%);
+    border-right: 1px solid rgba(209, 164, 77, 0.35);
+    transform: translateX(-102%);
+    visibility: hidden;
+    transition: transform 0.35s cubic-bezier(0.22, 0.61, 0.36, 1), visibility 0.35s;
+    box-sizing: border-box;
+  }
+  .section-header.is-menu-open .header__overlay { opacity: 1; visibility: visible; }
+  .section-header.is-menu-open .header__drawer { transform: none; visibility: visible; }
+
+  .header__drawer-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; }
+  .header__drawer-logo { line-height: 0; }
+  .header__drawer-logo img { width: 130px; height: auto; display: block; }
+  .header__drawer-close { color: var(--header-text); background: none; border: 0; cursor: pointer; margin-right: -10px; }
+  .header__drawer-search { margin-bottom: 12px; }
+  .header__drawer-menu,
+  .header__drawer-sub,
+  .header__drawer-social { list-style: none; margin: 0; padding: 0; }
+  .header__drawer-link {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px 2px;
+    font-family: var(--font-heading-family);
+    font-size: 1.35rem;
+    color: var(--header-text);
+    text-decoration: none;
+    border-bottom: 1px solid rgba(209, 164, 77, 0.18);
+    cursor: pointer;
+    list-style: none;
+  }
+  .header__drawer-link::-webkit-details-marker { display: none; }
+  .header__drawer-link:hover,
+  .header__drawer-link[aria-current='page'] { color: var(--color-gold-light); }
+  .header__drawer-chevron { display: inline-flex; transition: transform 0.25s ease; }
+  .header__drawer-group[open] .header__drawer-chevron { transform: rotate(180deg); }
+  .header__drawer-sub { padding: 6px 0 10px 12px; border-bottom: 1px solid rgba(209, 164, 77, 0.18); }
+  .header__drawer-sublink { display: block; padding: 10px 2px; font-size: var(--f2); letter-spacing: 0.04em; color: rgba(244, 236, 216, 0.75); text-decoration: none; }
+  .header__drawer-sublink:hover { color: var(--color-gold-light); }
+  .header__drawer-bottom { display: flex; flex-direction: column; gap: 18px; margin-top: auto; padding-top: 28px; }
+  .header__drawer-account { display: inline-flex; align-items: center; gap: 10px; color: var(--header-text); text-decoration: none; font-size: var(--f2); }
+  .header__drawer-social { display: flex; gap: 10px; }
+  .header__drawer-social a {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 42px;
+    height: 42px;
+    color: var(--color-gold-light);
+    border: 1px solid rgba(209, 164, 77, 0.4);
+    border-radius: 50%;
+    transition: background 0.2s ease, color 0.2s ease;
+  }
+  .header__drawer-social a:hover { color: var(--color-ink); background: var(--gradient-gold); }
+
+  .header a:focus-visible,
+  .header button:focus-visible,
+  .header summary:focus-visible,
+  .header__drawer a:focus-visible,
+  .header__drawer button:focus-visible,
+  .header__drawer summary:focus-visible { outline: 2px solid var(--color-gold-light); outline-offset: 2px; }
+
+  /* ---------- Responsivo ---------- */
   @media screen and (max-width: 1000px) {
+    .header { --logo-w-mobile: min(var(--logo-w), 132px); }
+    .header__inner { gap: 8px; padding-block: 10px; }
+    .section-header.is-scrolled .header__inner { padding-block: 6px; }
     .header__nav { display: none; }
     .header__menu-toggle { display: inline-flex; }
-    .header__inner { justify-content: space-between; }
-    .header__logo-link { margin: 0 auto; }
+    .header__logo-image { width: var(--logo-w-mobile); }
+    .section-header.is-scrolled .header__logo-image { width: calc(var(--logo-w-mobile) * 0.8); }
+    .header__account { display: none; }
+    .header__search-panel { position: fixed; top: auto; left: 12px; right: 12px; width: auto; max-width: none; margin-top: 10px; }
   }
   @media screen and (min-width: 1001px) {
-    .header__mobile-nav { display: none !important; }
+    .header__drawer,
+    .header__overlay { display: none; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .header__drawer, .header__overlay, .header__logo-image, .header__inner { transition: none; }
   }
 </style>
 
 <script>
   (function () {
-    var section = document.querySelector('.header[data-section-id="{{ section.id }}"]');
-    if (!section) return;
-    var toggle = section.querySelector('.header__menu-toggle');
-    var nav = document.getElementById('MobileNav-{{ section.id }}');
-    if (toggle && nav) {
-      toggle.addEventListener('click', function () {
-        var open = toggle.getAttribute('aria-expanded') === 'true';
-        toggle.setAttribute('aria-expanded', String(!open));
-        nav.hidden = open;
+    var root = document.querySelector('.header[data-section-id="{{ section.id }}"]');
+    if (!root) return;
+    var wrap = root.closest('.section-header') || root.parentElement;
+    var toggle = root.querySelector('[data-menu-toggle]');
+    var drawer = wrap.querySelector('[data-drawer]');
+    var overlay = wrap.querySelector('[data-overlay]');
+    var closeBtn = wrap.querySelector('[data-menu-close]');
+    var search = root.querySelector('[data-search]');
+
+    function setMenu(open) {
+      wrap.classList.toggle('is-menu-open', open);
+      document.documentElement.classList.toggle('header-lock', open);
+      if (toggle) toggle.setAttribute('aria-expanded', String(open));
+      if (drawer) drawer.setAttribute('aria-hidden', String(!open));
+      if (open && closeBtn) closeBtn.focus();
+      if (!open && toggle && document.activeElement && drawer && drawer.contains(document.activeElement)) toggle.focus();
+    }
+
+    if (toggle) toggle.addEventListener('click', function () { setMenu(!wrap.classList.contains('is-menu-open')); });
+    if (closeBtn) closeBtn.addEventListener('click', function () { setMenu(false); });
+    if (overlay) overlay.addEventListener('click', function () { setMenu(false); });
+
+    document.addEventListener('keydown', function (event) {
+      if (event.key !== 'Escape') return;
+      if (wrap.classList.contains('is-menu-open')) setMenu(false);
+      if (search && search.open) { search.open = false; search.querySelector('summary').focus(); }
+    });
+
+    document.addEventListener('click', function (event) {
+      if (search && search.open && !search.contains(event.target)) search.open = false;
+    });
+
+    if (search) {
+      search.addEventListener('toggle', function () {
+        if (search.open) { var input = search.querySelector('input'); if (input) input.focus(); }
       });
     }
+
+    window.addEventListener('resize', function () {
+      if (window.innerWidth > 1000 && wrap.classList.contains('is-menu-open')) setMenu(false);
+    });
+
+    function onScroll() { wrap.classList.toggle('is-scrolled', window.scrollY > 40); }
+    window.addEventListener('scroll', onScroll, { passive: true });
+    onScroll();
   })();
 </script>
 
@@ -319,13 +603,13 @@
     {
       "type": "checkbox",
       "id": "enable_country_selector",
-      "default": true,
+      "default": false,
       "label": "t:sections.header.settings.enable_country_selector.label"
     },
     {
       "type": "checkbox",
       "id": "enable_language_selector",
-      "default": true,
+      "default": false,
       "label": "t:sections.header.settings.enable_language_selector.label"
     }
   ]

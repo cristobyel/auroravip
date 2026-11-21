@@ -57,7 +57,7 @@
         refreshCartCount();
         if (typeof window.mostrarAlerta === 'function') {
           window.mostrarAlerta(
-            (window.themeStrings && window.themeStrings.addedToCart) || 'Added to cart',
+            (window.themeStrings && window.themeStrings.addedToCart) || 'Produto adicionado ao carrinho',
             'positivo'
           );
         }

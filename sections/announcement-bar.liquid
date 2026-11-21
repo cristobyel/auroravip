@@ -1,0 +1,126 @@
+{%- comment -%}
+  ============================================================
+  ANNOUNCEMENT BAR — barra de avisos no topo da loja
+  ============================================================
+
+  O QUE FAZ:
+  Faixa fina dourada acima do cabecalho com mensagens curtas (ex: "Joias
+  banhadas a ouro 18k"). Com mais de uma mensagem, elas se alternam sozinhas
+  com um fade suave. Cada mensagem pode ter um link.
+
+  ONDE E USADA:
+  sections/header-group.json (antes do cabecalho). Rola junto com a pagina,
+  enquanto o cabecalho fica fixo.
+
+  PRINCIPAIS PARTES:
+  - Blocks "message": text e link (ate 4).
+  - Rotacao em JS simples (troca a classe is-active a cada N segundos);
+    respeita prefers-reduced-motion e nao roda com 1 so mensagem.
+
+  OBSERVACOES:
+  Sem nenhuma mensagem a barra nao aparece.
+{%- endcomment -%}
+{%- if section.blocks.size > 0 -%}
+  <div class="announcement" data-announcement data-section-id="{{ section.id }}" data-speed="{{ section.settings.speed | times: 1000 }}" role="region" aria-label="{{ 'sections.header.announcement' | t }}">
+    <div class="announcement__inner page-width">
+      {%- for block in section.blocks -%}
+        {%- capture message_html -%}
+          <span class="announcement__spark" aria-hidden="true">&#10022;</span>
+          <span>{{ block.settings.text | escape }}</span>
+          <span class="announcement__spark" aria-hidden="true">&#10022;</span>
+        {%- endcapture -%}
+        <p class="announcement__item{% if forloop.first %} is-active{% endif %}" {{ block.shopify_attributes }}>
+          {%- if block.settings.link != blank -%}
+            <a href="{{ block.settings.link }}" class="announcement__link">{{ message_html }}</a>
+          {%- else -%}
+            {{ message_html }}
+          {%- endif -%}
+        </p>
+      {%- endfor -%}
+    </div>
+  </div>
+
+  <style>
+    .announcement {
+      color: var(--color-ink);
+      background: var(--gradient-gold);
+    }
+    .announcement__inner {
+      position: relative;
+      display: grid;
+      min-height: 36px;
+      align-items: center;
+      justify-items: center;
+    }
+    .announcement__item {
+      grid-area: 1 / 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+      margin: 0;
+      padding: 8px 0;
+      font-size: 0.72rem;
+      font-weight: 700;
+      letter-spacing: 0.16em;
+      text-align: center;
+      text-transform: uppercase;
+      opacity: 0;
+      visibility: hidden;
+      transition: opacity 0.5s ease, visibility 0.5s;
+    }
+    .announcement__item.is-active { opacity: 1; visibility: visible; }
+    .announcement__link { display: inline-flex; align-items: center; gap: 12px; color: inherit; text-decoration: none; }
+    .announcement__link:hover span:not(.announcement__spark) { text-decoration: underline; text-underline-offset: 3px; }
+    .announcement__spark { font-size: 0.6rem; opacity: 0.7; }
+    @media screen and (max-width: 749px) {
+      .announcement__item { font-size: 0.64rem; letter-spacing: 0.1em; }
+      .announcement__spark { display: none; }
+    }
+  </style>
+
+  <script>
+    (function () {
+      var root = document.querySelector('[data-announcement][data-section-id="{{ section.id }}"]');
+      if (!root) return;
+      var items = root.querySelectorAll('.announcement__item');
+      if (items.length < 2 || window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+      var speed = parseInt(root.getAttribute('data-speed'), 10) || 5000;
+      var index = 0;
+      var timer = setInterval(function () {
+        if (!document.body.contains(root)) { clearInterval(timer); return; }
+        items[index].classList.remove('is-active');
+        index = (index + 1) % items.length;
+        items[index].classList.add('is-active');
+      }, speed);
+    })();
+  </script>
+{%- endif -%}
+
+{% schema %}
+{
+  "name": "Barra de avisos",
+  "tag": "div",
+  "class": "section-announcement",
+  "max_blocks": 4,
+  "settings": [
+    { "type": "range", "id": "speed", "min": 3, "max": 10, "step": 1, "unit": "s", "label": "Tempo entre mensagens", "default": 5 }
+  ],
+  "blocks": [
+    {
+      "type": "message",
+      "name": "Mensagem",
+      "settings": [
+        { "type": "text", "id": "text", "label": "Texto", "default": "Joias exclusivas banhadas a ouro 18k" },
+        { "type": "url", "id": "link", "label": "Link (opcional)" }
+      ]
+    }
+  ],
+  "presets": [
+    {
+      "name": "Barra de avisos",
+      "blocks": [{ "type": "message" }]
+    }
+  ]
+}
+{% endschema %}
